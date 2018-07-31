@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mixer/etcd3.git"
+    "url": "git+https://github.com/taliesins/etcd3.git"
   },
   "nyc": {
     "include": [
