@@ -82,7 +82,7 @@ export class Proxy {
     let serverConnected = false;
     const serverBuffer: Buffer[] = [];
     const serverCnx = tls.connect(
-      etcdSourcePort,
+      Number(etcdSourcePort),
       etcdSourceHost,
       {
         secureContext: tls.createSecureContext({ ca: rootCertificate }),
