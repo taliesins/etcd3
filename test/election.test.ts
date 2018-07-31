@@ -1,10 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import { Election,
-         Etcd3 } from '../src';
-import { getOptions,
-         tearDownTestClient } from './util';
+import { Election, Etcd3 } from '../src';
+import { getOptions, tearDownTestClient } from './util';
 
 const sleep = (t: number) => new Promise(resolve => setTimeout(resolve, t));
 
@@ -25,7 +23,6 @@ describe('election', () => {
   });
 
   describe('campaign', () => {
-
     it('should wait for elected in campaign', async () => {
       const client2 = new Etcd3(getOptions());
       const election2 = new Election(client2, 'test-election', 1);
@@ -40,7 +37,8 @@ describe('election', () => {
        */
       let phase = 0;
 
-      const waitElection2 = election2.campaign('candidate2')
+      const waitElection2 = election2
+        .campaign('candidate2')
         .then(() => election.getLeader())
         .then(currentLeaderKey => {
           expect(phase).to.equal(1);
@@ -50,7 +48,8 @@ describe('election', () => {
       // essure client2 has joined campaign before client3
       await sleep(100);
 
-      const waitElection3 = election3.campaign('candidate3')
+      const waitElection3 = election3
+        .campaign('candidate3')
         .then(() => election.getLeader())
         .then(currentLeaderKey => {
           expect(phase).to.equal(2);
@@ -101,11 +100,9 @@ describe('election', () => {
 
       proclaimFn.restore();
     });
-
   });
 
   describe('proclaim', () => {
-
     it('should update if is a leader', async () => {
       const oldValue = await client.get(election.leaderKey);
       expect(oldValue).to.equal('candidate');
@@ -115,17 +112,14 @@ describe('election', () => {
     });
 
     it('should throw if not a leader', async () => {
-
       await election.resign();
       const whenCatch = sinon.spy();
       await election.proclaim('new-candidate').catch(whenCatch);
       expect(whenCatch.calledOnce).to.be.true;
     });
-
   });
 
   describe('getLeader', () => {
-
     it('should return leader key', async () => {
       const leaderKey = await election.getLeader();
       expect(election.leaderKey).to.equal(leaderKey);
@@ -137,7 +131,6 @@ describe('election', () => {
       await election.getLeader().catch(whenCatch);
       expect(whenCatch.calledOnce).to.be.true;
     });
-
   });
 
   describe('observe', () => {
@@ -146,7 +139,7 @@ describe('election', () => {
       const election2 = new Election(client2, 'test-election', 1);
 
       let currentLeaderKey = '';
-      election.on('leader', leaderKey => currentLeaderKey = leaderKey);
+      election.on('leader', leaderKey => (currentLeaderKey = leaderKey));
 
       expect(election.isObserving).to.be.true;
 
@@ -171,7 +164,7 @@ describe('election', () => {
       await election.resign();
 
       let currentLeaderKey = '';
-      election.on('leader', leaderKey => currentLeaderKey = leaderKey);
+      election.on('leader', leaderKey => (currentLeaderKey = leaderKey));
 
       // waiting for watcher created
       await sleep(30);

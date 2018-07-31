@@ -4,7 +4,8 @@ import { EtcdNoLeaderError, EtcdNotLeaderError } from './errors';
 import { Lease } from './lease';
 import { Namespace } from './namespace';
 
-export interface Election { // tslint:disable-line interface-name
+export interface Election {
+  // tslint:disable-line interface-name
   /**
    * fired after leader elected
    */
@@ -15,7 +16,7 @@ export interface Election { // tslint:disable-line interface-name
    * - recreate lease fail after lease lost
    */
   on(event: 'error', listener: (error: any) => void): this;
-  on(event: string|symbol, listener: Function): this;
+  on(event: string | symbol, listener: Function): this;
 }
 
 /**
@@ -42,15 +43,27 @@ export class Election extends EventEmitter {
   private _isCampaigning = false;
   private _isObserving = false;
 
-  public get leaderKey(): string { return this._leaderKey; }
-  public get leaderRevision(): string { return this._leaderRevision; }
-  public get isReady(): boolean { return this.leaseId.length > 0; }
-  public get isCampaigning(): boolean { return this._isCampaigning; }
-  public get isObserving(): boolean { return this._isObserving; }
+  public get leaderKey(): string {
+    return this._leaderKey;
+  }
+  public get leaderRevision(): string {
+    return this._leaderRevision;
+  }
+  public get isReady(): boolean {
+    return this.leaseId.length > 0;
+  }
+  public get isCampaigning(): boolean {
+    return this._isCampaigning;
+  }
+  public get isObserving(): boolean {
+    return this._isObserving;
+  }
 
-  constructor(public readonly parent: Namespace,
-              public readonly name: string,
-              public readonly ttl: number = 60) {
+  constructor(
+    public readonly parent: Namespace,
+    public readonly name: string,
+    public readonly ttl: number = 60,
+  ) {
     super();
     this.namespace = parent.namespace(this.getPrefix());
     this.on('newListener', (event: string) => this.onNewListener(event));
@@ -69,7 +82,12 @@ export class Election extends EventEmitter {
 
     const result = await this.namespace
       .if(this.leaseId, 'Create', '==', 0)
-      .then(this.namespace.put(this.leaseId).value(value).lease(this.leaseId))
+      .then(
+        this.namespace
+          .put(this.leaseId)
+          .value(value)
+          .lease(this.leaseId),
+      )
       .else(this.namespace.get(this.leaseId))
       .commit();
 
@@ -105,7 +123,12 @@ export class Election extends EventEmitter {
 
     const r = await this.namespace
       .if(this.leaseId, 'Create', '==', this._leaderRevision)
-      .then(this.namespace.put(this.leaseId).value(value).lease(this.leaseId))
+      .then(
+        this.namespace
+          .put(this.leaseId)
+          .value(value)
+          .lease(this.leaseId),
+      )
       .commit();
 
     if (!r.succeeded) {
@@ -141,7 +164,10 @@ export class Election extends EventEmitter {
   }
 
   public async getLeader() {
-    const result = await this.namespace.getAll().sort('Create', 'Ascend').keys();
+    const result = await this.namespace
+      .getAll()
+      .sort('Create', 'Ascend')
+      .keys();
     if (result.length === 0) {
       throw new EtcdNoLeaderError();
     }
@@ -180,11 +206,17 @@ export class Election extends EventEmitter {
 
       // looking for current leader
       let leaderKey = '';
-      const result = await this.namespace.getAll().sort('Create', 'Ascend').keys();
+      const result = await this.namespace
+        .getAll()
+        .sort('Create', 'Ascend')
+        .keys();
 
       if (result.length === 0) {
         // if not found, wait for leader
-        const watcher = await this.parent.watch().prefix(this.getPrefix()).create();
+        const watcher = await this.parent
+          .watch()
+          .prefix(this.getPrefix())
+          .create();
         try {
           leaderKey = await new Promise<string>((resolve, reject) => {
             watcher.on('put', kv => resolve(kv.key.toString()));
@@ -219,7 +251,7 @@ export class Election extends EventEmitter {
     });
   }
 
-  private shouldObserve(event: string|symbol): boolean {
+  private shouldObserve(event: string | symbol): boolean {
     return event === 'leader';
   }
 
@@ -240,7 +272,10 @@ export class Election extends EventEmitter {
 }
 
 async function waitForDelete(namespace: Namespace, key: string) {
-  const watcher = await namespace.watch().key(key).create();
+  const watcher = await namespace
+    .watch()
+    .key(key)
+    .create();
   const deleteOrError = new Promise((resolve, reject) => {
     // waiting for deleting of that key
     watcher.once('delete', resolve);
@@ -264,7 +299,7 @@ async function waitForDeletes(namespace: Namespace, keys: string[]) {
   }
 
   const tasks = keys.map(key => async () => {
-    const keyExisted = await namespace.get(key).string() !== null;
+    const keyExisted = (await namespace.get(key).string()) !== null;
     if (!keyExisted) {
       return;
     }
